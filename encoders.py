@@ -41,7 +41,7 @@ class GraphConv(nn.Module):
 
 class GcnEncoderGraph(nn.Module):
     def __init__(self, input_dim, hidden_dim, embedding_dim, label_dim, num_layers,
-            pred_hidden_wadims=[], concat=True, bn=True, dropout=0.0, args=None):
+            pred_hidden_dims=[], concat=True, bn=True, dropout=0.0, args=None):
         super(GcnEncoderGraph, self).__init__()
         self.concat = concat
         add_self = not concat
