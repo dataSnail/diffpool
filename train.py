@@ -610,7 +610,7 @@ def arg_parse():
                         num_epochs=1000,
                         train_ratio=0.8,
                         test_ratio=0.1,
-                        num_workers=1,
+                        num_workers=0,
                         input_dim=10,
                         hidden_dim=20,
                         output_dim=20,
