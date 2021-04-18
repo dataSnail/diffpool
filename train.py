@@ -235,9 +235,11 @@ def train(dataset, model, args, same_feat=True, val_dataset=None, test_dataset=N
         train_accs.append(result['acc'])
         train_epochs.append(epoch)
         if val_dataset is not None:
+            print("validation>>>>>>")
             val_result = evaluate(val_dataset, model, args, name='Validation')
             val_accs.append(val_result['acc'])
         if val_result['acc'] > best_val_result['acc'] - 1e-7:
+            print("saving best results>>>>>")
             best_val_result['acc'] = val_result['acc']
             best_val_result['epoch'] = epoch
             best_val_result['loss'] = avg_loss
@@ -287,7 +289,7 @@ def prepare_data(graphs, args, test_graphs=None, max_nodes=0):
     else:
         train_idx = int(len(graphs) * args.train_ratio)
         train_graphs = graphs[:train_idx]
-        val_graphs = graph[train_idx:]
+        val_graphs = graphs[train_idx:]
     print('Num training graphs: ', len(train_graphs), 
           '; Num validation graphs: ', len(val_graphs),
           '; Num testing graphs: ', len(test_graphs))

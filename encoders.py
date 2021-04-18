@@ -41,7 +41,7 @@ class GraphConv(nn.Module):
 
 class GcnEncoderGraph(nn.Module):
     def __init__(self, input_dim, hidden_dim, embedding_dim, label_dim, num_layers,
-            pred_hidden_dims=[], concat=True, bn=True, dropout=0.0, args=None):
+            pred_hidden_wadims=[], concat=True, bn=True, dropout=0.0, args=None):
         super(GcnEncoderGraph, self).__init__()
         self.concat = concat
         add_self = not concat
@@ -296,12 +296,12 @@ class SoftPoolingGcnEncoder(GcnEncoderGraph):
 
     def forward(self, x, adj, batch_num_nodes, **kwargs):
         if 'assign_x' in kwargs:
-            x_a = kwargs['assign_x']
+            x_a = kwargs['assign_x']  # 已有的值？
         else:
-            x_a = x
+            x_a = x  # 输入的值
 
         # mask
-        max_num_nodes = adj.size()[1]
+        max_num_nodes = adj.size()[1]  #下一层的节点数量？
         if batch_num_nodes is not None:
             embedding_mask = self.construct_mask(max_num_nodes, batch_num_nodes)
         else:
@@ -317,16 +317,16 @@ class SoftPoolingGcnEncoder(GcnEncoderGraph):
         #if embedding_mask is not None:
         #    self.assign_tensor = self.assign_tensor * embedding_mask
         # [batch_size x num_nodes x embedding_dim]
-        embedding_tensor = self.gcn_forward(x, adj,
+        embedding_tensor = self.gcn_forward(x, adj,  # 基于GCN在当前网络下收集邻居节点信息，得到节点的embedding
                 self.conv_first, self.conv_block, self.conv_last, embedding_mask)
 
-        out, _ = torch.max(embedding_tensor, dim=1)
+        out, _ = torch.max(embedding_tensor, dim=1)  # 获得每行最大的值
         out_all.append(out)
         if self.num_aggs == 2:
             out = torch.sum(embedding_tensor, dim=1)
             out_all.append(out)
 
-        for i in range(self.num_pooling):
+        for i in range(self.num_pooling):  # pooling的次数
             if batch_num_nodes is not None and i == 0:
                 embedding_mask = self.construct_mask(max_num_nodes, batch_num_nodes)
             else:
@@ -334,15 +334,15 @@ class SoftPoolingGcnEncoder(GcnEncoderGraph):
 
             self.assign_tensor = self.gcn_forward(x_a, adj, 
                     self.assign_conv_first_modules[i], self.assign_conv_block_modules[i], self.assign_conv_last_modules[i],
-                    embedding_mask)
+                    embedding_mask)  # 通过当前节点表示和邻接矩阵获得当前节点到下一层节点的soft对应
             # [batch_size x num_nodes x next_lvl_num_nodes]
             self.assign_tensor = nn.Softmax(dim=-1)(self.assign_pred_modules[i](self.assign_tensor))
             if embedding_mask is not None:
                 self.assign_tensor = self.assign_tensor * embedding_mask
 
             # update pooled features and adj matrix
-            x = torch.matmul(torch.transpose(self.assign_tensor, 1, 2), embedding_tensor)
-            adj = torch.transpose(self.assign_tensor, 1, 2) @ adj @ self.assign_tensor
+            x = torch.matmul(torch.transpose(self.assign_tensor, 1, 2), embedding_tensor)  # 得到下一层的"超"节点表示
+            adj = torch.transpose(self.assign_tensor, 1, 2) @ adj @ self.assign_tensor  # 矩阵乘法，得到下一层的邻接矩阵
             x_a = x
         
             embedding_tensor = self.gcn_forward(x, adj, 
@@ -377,10 +377,10 @@ class SoftPoolingGcnEncoder(GcnEncoderGraph):
             pred_adj0 = self.assign_tensor @ torch.transpose(self.assign_tensor, 1, 2) 
             tmp = pred_adj0
             pred_adj = pred_adj0
-            for adj_pow in range(adj_hop-1):
+            for adj_pow in range(adj_hop-1):  #这是什么意思？
                 tmp = tmp @ pred_adj0
                 pred_adj = pred_adj + tmp
-            pred_adj = torch.min(pred_adj, torch.ones(1, dtype=pred_adj.dtype).cuda())
+            pred_adj = torch.min(pred_adj, torch.ones(1, dtype=pred_adj.dtype).cuda())  # 大于1取1
             #print('adj1', torch.sum(pred_adj0) / torch.numel(pred_adj0))
             #print('adj2', torch.sum(pred_adj) / torch.numel(pred_adj))
             #self.link_loss = F.nll_loss(torch.log(pred_adj), adj)
